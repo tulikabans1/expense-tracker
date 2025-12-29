@@ -1,0 +1,567 @@
+{
+  "Zerodha/Bank Main.": {
+    "shortName": "Zerodha/Bank Maint.",
+    "keywords": [
+    ],
+    "subcategories": [
+      {
+        "name": "Zerodha Maint.",
+        "shortName": "Zeodha Maint.",
+        "keywords": [
+          "zerodha",
+          "INDIANCLEARINGCORP"
+        ],
+        "rule": {
+          "amountLessThan": 900
+        },
+        "ruleMode": "and"
+      },
+      {
+        "name": "Locker Rent",
+        "shortName": "Locker Rent",
+        "keywords": [
+          "LOCKER"
+        ]
+      },
+      {
+        "name": "ATM Card AMC",
+        "shortName": "ATM AMC",
+        "keywords": [
+          "Card AMC"
+        ]
+      },
+      {
+        "name": "BANK ACCT GST",
+        "shortName": "Bank GST",
+        "keywords": [
+          "GOODS AND SERVICES TAX"
+        ]
+      },
+      {
+        "name": "SMS Alerts Charges",
+        "shortName": "SMS Alerts",
+        "keywords": [
+          "SMS ALERTS CHARGES"
+        ]
+      }
+    ]
+  },
+  "Interest Earned": {
+    "shortName": "Interest Earned",
+    "keywords": [
+      "interest income",
+      "savings account interest",
+      "Savings account",
+      "ACCRUAL",
+      "ACH-CR"
+    ],
+    "subcategories": [
+      {
+        "name": "Savings Account Interest",
+        "shortName": "S.A.Int.",
+        "keywords": [
+          "savings account interest",
+          "Savings account",
+          "ACCRUAL",
+          "Int.Pd",
+          "Credit Interest Capitalised",
+          "CREDIT INTEREST",
+          "INT CAPITALISED"
+        ]
+      },
+      {
+        "name": "Dividend",
+        "shortName": "Div.",
+        "keywords": [
+          "ACH-CR"
+        ]
+      },
+      {
+        "name": "FD Interest",
+        "shortName": "FD Int.",
+        "keywords": [
+          "QUARTERLY INTEREST CREDIT",
+          "TRANSFER-INT TRF FRM",
+          "QUARTERLY",
+          "NET-FD Proceeds-Interest"
+        ],
+        "excludeKeywords":["QUARTERLY TAX RECOVERED"]
+      },
+      {
+        "name": "SGB Interest",
+        "shortName": "SGB Int.",
+        "keywords": [
+          "central depository"
+        ]
+      }
+      ]
+  },   
+  "FD TAX/Premat With. Pen.": {
+    "shortName": "FD TAX/Premat With. Pen.",
+    "keywords": [
+    ],
+    "subcategories": [
+      {
+        "name": "FD Tax",
+        "shortName": "FD Tax.",
+        "keywords": [
+          "QUARTERLY TAX RECOVERED"
+        ]
+      },
+      {
+        "name": "FD Premature Withdrawal Penalty",
+        "shortName": "FD Prem. Withd. Pen",
+        "keywords": [
+          "NET-FD Proceeds-Interest"
+        ]
+      }
+    ]
+  },
+  "Grocery": {
+    "shortName": "Grocery",
+    "keywords": [
+      "country delight",
+      "countrydelight",
+      "9821160390",
+      "vg grocery",
+      "milkBasket",
+      "atta",
+      "blinkit",
+      "29488149",
+      "the mil",
+      "55110853",
+      "Reliance Retail Limit",
+      "NISHI DAIRY",
+      "Max Grocery"
+    ],
+    "subcategories": [
+      {
+        "name": "Country Delight",
+        "shortName": "C. Delight",
+        "keywords": [
+          "country delight",
+          "countrydelight",
+          "Countr"
+        ]
+      },
+      {
+        "name": "VG Grocery",
+        "shortName": "VG Grocery",
+        "keywords": [
+          "9821160390",
+          "55110853",
+          "NISHI DAIRY",
+          "Max Grocery"
+        ]
+      },
+      {
+        "name": "MilkBasket",
+        "shortName": "MilkBsk.",
+        "keywords": [
+          "milkBasket",
+          "29488149",
+          "Reliance Retail Limit"
+        ]
+      },
+      {
+        "name": "Atta-Chawal",
+        "shortName": "Atta-Chawal",
+        "keywords": [
+          "atta",
+          "the mil",
+          "One97 Communications"
+        ]
+      },
+      {
+        "name": "Blinkit",
+        "shortName": "Blinkit",
+        "keywords": [
+          "blinkit"
+        ]
+      },
+      {
+        "name": "Grofer",
+        "shortName": "Grofer",
+        "keywords": [
+          "grofer"
+        ]
+      },
+      {
+        "name": "BigBasket",
+        "shortName": "BigBasket",
+        "keywords": [
+          "bigbasket",
+          "BIG BASKET"
+        ]
+      },
+      {
+        "name": "BBDaily",
+        "shortName": "BBDaily",
+        "keywords": [
+          "bbdaily"
+        ]
+      },
+      {
+        "name": "Fruits",
+        "shortName": "Fruits",
+        "keywords": [
+          "fruits",
+          "vegetables",
+          "veg",
+          "fresh veg",
+          "fresh vegetables",
+          "fresh fruits",
+          "organic fruits",
+          "organic veg",
+          "Sonu",
+          "Sarvesh Yadav"
+        ]
+      }
+    ]
+  },
+  "Medical": {
+    "shortName": "Medical",
+    "keywords": [
+      "q576594539",
+      "dashmes",
+      "medicine",
+      "homeopathy",
+      "11048230",
+      "Dashmesh"
+    ],
+    "subcategories": [
+      {
+        "name": "Homeopathy",
+        "shortName": "Homeo.",
+        "keywords": [
+          "q576594539"
+        ]
+      },
+      {
+        "name": "Medicine",
+        "shortName": "Med.",
+        "keywords": [
+          "dashmes",
+          "medicine",
+          "11048230",
+          "Dashmesh",
+          "pharmacy",
+          "chemist"
+        ]
+      },
+      {
+        "name": "Doctor",
+        "shortName": "Doctor",
+        "keywords": [
+          "Docon", "Hospital"
+        ]
+      }
+    ]
+  },
+  "Extracurricular": {
+    "shortName": "ExtraCurr.",
+    "keywords": [
+      "skating",
+      "8814014863",
+      "manju.3759",
+      "Sagar",
+      "swimming",
+      "KUMON SOHNA"
+    ],
+    "subcategories": [
+      {
+        "name": "Skating",
+        "shortName": "Skating",
+        "keywords": [
+          "skating",
+          "manju.3759",
+          "MANJU  KH"
+        ]
+      },
+      {
+        "name": "Swimming",
+        "shortName": "Swimming",
+        "keywords": [
+          "8814014863",
+          "Sagar",
+          "swimming"
+        ]
+      },
+      {
+        "name": "Kumon",
+        "shortName": "Kumon",
+        "keywords": [
+          "KUMON SOHNA"
+        ]
+      },
+      {
+        "name": "Tuition",
+        "shortName": "Tuition",
+        "keywords": [
+          "tuition",
+          "tution",
+          "RACHNA HARJAI"
+        ]
+      }
+    ]
+  },
+  "Online Shopping": {
+    "shortName": "OnlineShop.",
+    "keywords": [],
+    "subcategories": [
+      {
+        "name": "FirstCry",
+        "shortName": "FirstCry",
+        "keywords": [
+          "firstcry",
+          "FirstC"
+        ]
+      },
+      {
+        "name": "AMAZON",
+        "shortName": "Amazon",
+        "keywords": [
+          "amazon"
+        ]
+      },
+      {
+        "name": "Flipkart",
+        "shortName": "Flipkart",
+        "keywords": [
+          "flipkart"
+        ]
+      },
+      {
+        "name": "Myntra",
+        "shortName": "Myntra",
+        "keywords": [
+          "myntra"
+        ]
+      },
+      {
+        "name": "Meesho",
+        "shortName": "Meesho",
+        "keywords": [
+          "meesho"
+        ]
+      },
+      {
+        "name": "Star and Daisy",
+        "shortName": "S&D",
+        "keywords": [
+          "star and daisy",
+          "star&daisy"
+        ]
+      }
+    ]
+  },
+  "Household Expense": {
+    "shortName": "Household",
+    "keywords": [],
+    "subcategories": [
+      {
+        "name": "Deepti-Books",
+        "shortName": "Books",
+        "keywords": [
+          "deepti-books",
+          "9910308083"
+        ]
+      },
+      {
+        "name": "Maali",
+        "shortName": "Maali",
+        "keywords": [
+          "maali",
+          "9811570799"
+        ]
+      },
+      {
+        "name": "Electricity/Maintenance",
+        "shortName": "Elec./Maint.",
+        "keywords": [
+          "mygate",
+          "electricity/maintenance",
+          " VIPUL GREENS RESI"
+        ]
+      },
+      {
+        "name": "Phone-internet",
+        "shortName": "Phone/Net",
+        "keywords": [
+          "BHARTI AIRTEL LIMITED",
+          "AIRTEL PAYMENTS BANK L",
+          "AirtelPostpaidBillP",
+          "AirtelMultiBillPaym",
+          "Airtel Payments Bank /Airtel"
+        ]
+      },
+      {
+        "name": "Clothes",
+        "shortName": "Clothes",
+        "keywords": [
+          "clothes",
+          "bhaavya",
+          "lifestyle",
+          "Fabindia",
+          "9811550735",
+          "NYKAA FASHION"
+        ]
+      },
+      {
+        "name": "Cab",
+        "shortName": "Cab",
+        "keywords": [
+          "uber",
+          "BLUSMA"
+        ]
+      },
+      {
+        "name": "Order Food",
+        "shortName": "O.Food",
+        "keywords": [
+          "eazydiner",
+          "zomato",
+          "swiggy",
+          "food",
+          "Om Sweets",
+          "BAKES N BERRIES",
+          "FOOD COURT",
+          "Burger King",
+          "Barista",
+          "THE MASALA STORY"
+        ]
+      },
+      {
+        "name": "Beauty Parlour",
+        "shortName": "Beauty",
+        "keywords": [
+          "urban",
+          "@ISHA",
+          "/ISHA",
+          "IMPRESSION"
+        ]
+      },
+      {
+        "name": "Car Cleaner",
+        "shortName": "CarClean.",
+        "keywords": [
+          "car cleaner",
+          "8860096184",
+          "MISHRA NATANARAYAN"
+        ]
+      },
+      {
+        "name": "Movies&Games",
+        "shortName": "Movies",
+        "keywords": [
+          "movies",
+          "amznplpvr",
+          "PVR",
+          "ENTERTAIN"
+        ]
+      },
+      {
+        "name": "Newspaper",
+        "shortName": "News",
+        "keywords": [
+          "newspaper",
+          "8178438194",
+          "NAVEEN"
+        ],
+        "excludeKeywords":["NAVEEN SHARMA"]
+      },
+      {
+        "name": "School Fee",
+        "shortName": "SchoolFee",
+        "keywords": [
+          "eazypayweb",
+          "LOTUS VALLEY",
+          "LOTUSVALLEY",
+          "eazypay",
+          "school fee"
+        ]
+      },
+      {
+        "name": "ATM Cash Withdrawal",
+        "shortName": "ATM Cash",
+        "keywords": [
+          "ATM-CASH"
+        ]
+      },
+      {
+        "name": "Fuel",
+        "shortName": "Fuel",
+        "keywords": [
+          "fuel",
+          "indian oil",
+          "bpc",
+          "bharat petroleum",
+          "hpcl",
+          "hindustan petroleum",
+          "Fuels"
+        ]
+      },
+      {
+        "name": "Gas",
+        "shortName": "Gas",
+        "keywords": [
+          "IGL"
+        ]
+      },
+      {
+        "name": "Home Supplies",
+        "shortName": "H.Supplies",
+        "keywords": [
+          "home supplies",
+          "home needs",
+          "SAMPURN KITCHEN",
+          "SRI SAI INTERNATIONAL",
+          "khadinatural"
+        ]
+      }
+    ]
+  },
+  "Salary/Reim.": {
+    "shortName": "Salary/Reim.",
+    "keywords": [
+      "salary"
+    ],
+    "subcategories": [
+      {
+        "name": "Salary",
+        "shortName": "Salary",
+        "keywords": [
+          "salary"
+        ]
+      },
+      {
+        "name": "Salary Reimbursement",
+        "shortName": "Sal Reim",
+        "keywords": [
+          "Concur Payments"
+        ]
+      }
+    ]
+  },
+  "Insurance": {
+    "shortName": "Insurance",
+    "keywords": [],
+    "subcategories": [
+      {
+        "name": "Life Insurance",
+        "shortName": "Life In.",
+        "keywords": [
+          "LIC",
+          "Bajaj Allianz Life"
+        ]
+      },
+      {
+        "name": "Other Insurance",
+        "shortName": "Other Ins.",
+        "keywords": [
+          "insurance"
+        ]
+      }
+    ]
+  }
+}
