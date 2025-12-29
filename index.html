@@ -690,6 +690,10 @@
         return new Promise(resolve => { resolver = resolve; });
       };
     })();
+        // --- API base (local vs hosted backend) ---
+    const API_BASE = (window.location.hostname && window.location.hostname.endsWith('github.io'))
+      ? ''
+      : '';
     // --- Auth helpers ---
     function getToken() { return localStorage.getItem('token'); }
     function setToken(t) { if (t) localStorage.setItem('token', t); else localStorage.removeItem('token'); }
@@ -701,7 +705,7 @@
     async function apiFetch(url, options = {}) {
       const opts = Object.assign({}, options);
       opts.headers = Object.assign({}, options.headers || {}, authHeaders());
-      return fetch(url, opts);
+      return fetch(API_BASE + url, opts);
     }
     function refreshAuthUI() {
       const email = localStorage.getItem('userEmail');
@@ -4198,7 +4202,7 @@
       msg.style.color = '#2563eb';
       msg.textContent = 'Working...';
       try {
-        const res = await fetch('/auth/' + (authMode === 'login' ? 'login' : 'register'), {
+        const res = await fetch(API_BASE + '/auth/' + (authMode === 'login' ? 'login' : 'register'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(authMode === 'login' ? { email, password } : { email, password, name })
