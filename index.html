@@ -1219,10 +1219,33 @@
         document.getElementById('mappingStatus').style.color = '#2563eb';
         document.getElementById('mappingStatus').textContent = (mappingEditContext.mode === 'member' || mappingEditContext.mode === 'member-investment') ? 'Loaded member mapping' : 'Loaded current mapping';
         setTab('visual');
-      }).catch(err => {
-        document.getElementById('mappingStatus').style.color = '#ef4444';
-        document.getElementById('mappingStatus').textContent = 'Failed to load mapping';
-        setTab('json');
+      }).catch(async err => {
+        // Fallback for static hosting (e.g., GitHub Pages) where the
+        // /mapping API is not available: try loading the bundled
+        // category-mapping.json file directly.
+        let loadedFromStatic = false;
+        try {
+          const resp = await fetch('category-mapping.json');
+          if (resp && resp.ok) {
+            const json = await resp.json();
+            mapping = json && typeof json === 'object' ? json : {};
+            document.getElementById('mappingEditor').value = JSON.stringify(mapping, null, 2);
+            document.getElementById('validationMsg').textContent = '';
+            renderMainCategoryList();
+            clearDetailsPanel();
+            document.getElementById('mappingStatus').style.color = '#2563eb';
+            document.getElementById('mappingStatus').textContent = 'Loaded static mapping (read-only)';
+            setTab('visual');
+            loadedFromStatic = true;
+          }
+        } catch (e) {
+          // Ignore and fall through to error state
+        }
+        if (!loadedFromStatic) {
+          document.getElementById('mappingStatus').style.color = '#ef4444';
+          document.getElementById('mappingStatus').textContent = 'Failed to load mapping';
+          setTab('json');
+        }
       });
     }
     function closeMappingModal() {
