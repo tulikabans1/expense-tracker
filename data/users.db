@@ -1,3 +1,0 @@
-{"email":"tulikabans@gmail.com","passwordHash":"$2a$10$MltT2XsCtvneFs49mb4uCe2q22IDnXSqFyqSmg2oI2P8KHIvmszCm","createdAt":{"$$date":1766283457525},"_id":"rruxZY0qiMOmVvOy","name":"Tulika Bansal"}
-{"$$indexCreated":{"fieldName":"email","unique":true,"sparse":false}}
-{"$$indexCreated":{"fieldName":"email","unique":true}}
