@@ -5,7 +5,7 @@ const XLSXStyle = require('xlsx-js-style');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
-const Datastore = require('nedb-promises');
+const { MongoClient } = require('mongodb');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
@@ -17,17 +17,49 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// --- Auth & DB setup ---
-const DATA_DIR = path.join(__dirname, 'data');
-if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
-const usersDb = Datastore.create({ filename: path.join(DATA_DIR, 'users.db'), autoload: true });
-const mappingsDb = Datastore.create({ filename: path.join(DATA_DIR, 'mappings.db'), autoload: true });
-const uploadsDb = Datastore.create({ filename: path.join(DATA_DIR, 'uploads.db'), autoload: true });
-const familiesDb = Datastore.create({ filename: path.join(DATA_DIR, 'families.db'), autoload: true });
-const transferRulesDb = Datastore.create({ filename: path.join(DATA_DIR, 'transfer-rules.db'), autoload: true });
-const memberMappingsDb = Datastore.create({ filename: path.join(DATA_DIR, 'member-mappings.db'), autoload: true });
-const investmentMappingsDb = Datastore.create({ filename: path.join(DATA_DIR, 'investment-mappings.db'), autoload: true });
-usersDb.ensureIndex({ fieldName: 'email', unique: true }).catch(() => {});
+// --- Auth & DB setup (MongoDB Atlas) ---
+const MONGODB_URI = process.env.MONGODB_URI || '';
+const MONGODB_DB = process.env.MONGODB_DB || 'expense-tracker';
+
+let mongoClient;
+let db;
+let usersDb;
+let mappingsDb;
+let uploadsDb;
+let familiesDb;
+let transferRulesDb;
+let memberMappingsDb;
+let investmentMappingsDb;
+
+async function initDb() {
+  if (db) return db;
+  if (!MONGODB_URI) {
+    console.error('MONGODB_URI is not set. Configure it in your environment (Render dashboard).');
+    throw new Error('MONGODB_URI not configured');
+  }
+  mongoClient = new MongoClient(MONGODB_URI);
+  await mongoClient.connect();
+  db = mongoClient.db(MONGODB_DB);
+  usersDb = db.collection('users');
+  mappingsDb = db.collection('mappings');
+  uploadsDb = db.collection('uploads');
+  familiesDb = db.collection('families');
+  transferRulesDb = db.collection('transferRules');
+  memberMappingsDb = db.collection('memberMappings');
+  investmentMappingsDb = db.collection('investmentMappings');
+
+  await usersDb.createIndex({ email: 1 }, { unique: true });
+  await uploadsDb.createIndex({ userId: 1, createdAt: -1 });
+  await mappingsDb.createIndex({ userId: 1 });
+  await familiesDb.createIndex({ userId: 1 });
+  await transferRulesDb.createIndex({ userId: 1, memberId: 1 });
+  await memberMappingsDb.createIndex({ userId: 1, memberId: 1 });
+  await investmentMappingsDb.createIndex({ userId: 1, memberId: 1 });
+
+  console.log('Connected to MongoDB');
+  return db;
+}
+
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-insecure-secret-change-me';
 
 function genId() {
@@ -1036,8 +1068,9 @@ app.post('/my/uploads', authMiddleware, upload.single('file'), async (req, res) 
       parseError = e && e.message ? e.message : String(e);
     }
     // Keep file on disk for future reference; store metadata and report summary/entries
-    // Store report as raw JSON string to avoid NeDB dot-key issues
-    const doc = await uploadsDb.insert({
+    // Store report as raw JSON string to avoid dot-key issues
+    const doc = {
+      _id: genId(),
       userId,
       filename: req.file.filename,
       originalName: req.file.originalname,
@@ -1047,7 +1080,8 @@ app.post('/my/uploads', authMiddleware, upload.single('file'), async (req, res) 
       report: undefined,
       reportRaw: report ? JSON.stringify(report) : null,
       error: parseError || null
-    });
+        };
+    await uploadsDb.insertOne(doc);
     return res.json({ id: doc._id, originalName: doc.originalName, createdAt: doc.createdAt, report, error: doc.error });
   } catch (e) {
     console.error('Save upload failed:', e);
@@ -1061,7 +1095,7 @@ app.post('/my/uploads', authMiddleware, upload.single('file'), async (req, res) 
 app.get('/my/uploads', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
-    const docs = await uploadsDb.find({ userId }).sort({ createdAt: -1 });
+    const docs = await uploadsDb.find({ userId }).sort({ createdAt: -1 }).toArray();
     const items = docs.map(d => {
       let summary = { expense: 0, income: 0, transfers: 0, transfersOut: 0, transfersIn: 0 };
       if (d.report && d.report.summary) summary = d.report.summary;
@@ -1101,7 +1135,7 @@ app.delete('/my/uploads/:id', authMiddleware, async (req, res) => {
     // Remove file if present
     const filePath = path.join(__dirname, 'uploads', doc.filename);
     try { if (fs.existsSync(filePath)) fs.unlinkSync(filePath); } catch (e) { console.warn('Failed to delete file:', e); }
-    await uploadsDb.remove({ _id: doc._id }, {});
+    await uploadsDb.deleteOne({ _id: doc._id });
     return res.json({ ok: true });
   } catch (e) {
     console.error('Delete upload failed:', e);
@@ -1116,11 +1150,11 @@ app.delete('/my/uploads', authMiddleware, async (req, res) => {
     if (!ids || !ids.length) {
       return res.status(400).json({ error: 'ids array is required' });
     }
-    const docs = await uploadsDb.find({ userId: req.user.id, _id: { $in: ids } });
+    const docs = await uploadsDb.find({ userId: req.user.id, _id: { $in: ids } }).toArray();
     for (const doc of docs) {
       const filePath = path.join(__dirname, 'uploads', doc.filename);
       try { if (fs.existsSync(filePath)) fs.unlinkSync(filePath); } catch (e) { console.warn('Failed to delete file:', e); }
-      await uploadsDb.remove({ _id: doc._id }, {});
+      await uploadsDb.deleteOne({ _id: doc._id });
     }
     return res.json({ ok: true, deleted: docs.length });
   } catch (e) {
@@ -1148,7 +1182,7 @@ app.put('/my/uploads/:id/reparse', authMiddleware, async (req, res) => {
       return res.status(500).json({ error: 'Reparse failed: ' + (e && e.message ? e.message : String(e)) });
     }
     // Save reparsed report as raw JSON string to avoid dot-key issues
-    await uploadsDb.update({ _id: doc._id }, { $set: { report: undefined, reportRaw: JSON.stringify(report) } });
+    await uploadsDb.updateOne({ _id: doc._id }, { $set: { report: undefined, reportRaw: JSON.stringify(report) } });
     return res.json({ ok: true, summary: report && report.summary ? report.summary : { expense: 0, income: 0, transfers: 0, transfersOut: 0, transfersIn: 0 } });
   } catch (e) {
     console.error('Reparse upload failed:', e);
@@ -1166,7 +1200,7 @@ app.get('/my/expenses', authMiddleware, async (req, res) => {
     if (filterIds && filterIds.length) {
       query = { userId, memberId: { $in: filterIds } };
     }
-    const docs = await uploadsDb.find(query);
+    const docs = await uploadsDb.find(query).toArray();
     // Aggregate per-upload reports while tagging each entry with its source memberId
     const agg = { expense: {}, income: {}, transfers: {}, transfersOut: {}, transfersIn: {}, summary: { expense: 0, income: 0, transfers: 0, transfersOut: 0, transfersIn: 0 }, entries: [] };
     const addBucket = (bucket, key, amt) => {
@@ -1216,7 +1250,7 @@ app.post('/my/uploads/aggregate', authMiddleware, async (req, res) => {
     if (!ids || !ids.length) {
       return res.status(400).json({ error: 'ids array is required' });
     }
-    const docs = await uploadsDb.find({ userId: req.user.id, _id: { $in: ids } });
+    const docs = await uploadsDb.find({ userId: req.user.id, _id: { $in: ids } }).toArray();
     const reports = docs.map(d => {
       if (d.report) return d.report;
       if (typeof d.reportRaw === 'string') { try { return JSON.parse(d.reportRaw); } catch { return null; } }
@@ -1247,7 +1281,8 @@ app.post('/my/uploads-multi', authMiddleware, upload.array('files'), async (req,
       } catch (e) {
         parseError = e && e.message ? e.message : String(e);
       }
-      const doc = await uploadsDb.insert({
+    const doc = {
+        _id: genId(),
         userId,
         filename: f.filename,
         originalName: f.originalname,
@@ -1257,7 +1292,8 @@ app.post('/my/uploads-multi', authMiddleware, upload.array('files'), async (req,
         report: undefined,
         reportRaw: report ? JSON.stringify(report) : null,
         error: parseError || null
-      });
+      };
+      await uploadsDb.insertOne(doc);
       if (parseError) errors.push({ file: f.originalname, error: parseError });
       items.push({ id: doc._id, originalName: doc.originalName, createdAt: doc.createdAt, summary: report && report.summary ? report.summary : { expense: 0, income: 0, transfers: 0, transfersOut: 0, transfersIn: 0 }, error: parseError || null });
     }
@@ -1420,9 +1456,9 @@ app.put('/mapping', authMiddleware, async (req, res) => {
     const existing = await mappingsDb.findOne({ userId });
     const mappingRaw = JSON.stringify(incoming);
     if (existing) {
-      await mappingsDb.update({ _id: existing._id }, { $set: { mapping: undefined, mappingRaw, updatedAt: new Date() } }, { multi: false });
+     await mappingsDb.updateOne({ _id: existing._id }, { $set: { mapping: undefined, mappingRaw, updatedAt: new Date() } });
     } else {
-      await mappingsDb.insert({ userId, mappingRaw, createdAt: new Date(), updatedAt: new Date() });
+       await mappingsDb.insertOne({ _id: genId(), userId, mappingRaw, createdAt: new Date(), updatedAt: new Date() });
     }
     return res.json({ ok: true, warnings });
   } catch (e) {
@@ -1441,11 +1477,12 @@ app.post('/auth/register', async (req, res) => {
     if (String(password).length < 6) return res.status(400).json({ error: 'Password too short (min 6)' });
     const salt = bcrypt.genSaltSync(10);
     const hash = bcrypt.hashSync(password, salt);
-    const user = await usersDb.insert({ email: normEmail, name: (name ? String(name).trim() : undefined), passwordHash: hash, createdAt: new Date() });
+    const user = { _id: genId(), email: normEmail, name: (name ? String(name).trim() : undefined), passwordHash: hash, createdAt: new Date() };
+    await usersDb.insertOne(user);
     const token = signToken(user);
     return res.json({ token, user: { id: user._id, email: user.email, name: user.name || null } });
   } catch (e) {
-    if (e && e.errorType === 'uniqueViolated') {
+    if (e && e.code === 11000) {
       return res.status(409).json({ error: 'Email already registered' });
     }
     console.error('Register failed:', e);
@@ -1494,7 +1531,8 @@ app.get('/my/transfer-rules/:memberId', authMiddleware, async (req, res) => {
     let doc = await transferRulesDb.findOne({ userId: req.user.id, memberId });
     if (!doc) {
       // Initialize empty rules doc lazily
-      doc = await transferRulesDb.insert({ userId: req.user.id, memberId, rules: [], createdAt: new Date(), updatedAt: new Date() });
+      doc = { _id: genId(), userId: req.user.id, memberId, rules: [], createdAt: new Date(), updatedAt: new Date() };
+      await transferRulesDb.insertOne(doc);
     }
     return res.json({ memberId, rules: Array.isArray(doc.rules) ? doc.rules : [] });
   } catch (e) {
@@ -1531,9 +1569,9 @@ app.put('/my/member-mapping/:memberId', authMiddleware, async (req, res) => {
     if (errors.length) return res.status(400).json({ error: 'Validation failed', errors });
     const existing = await memberMappingsDb.findOne({ userId: req.user.id, memberId });
     if (existing) {
-      await memberMappingsDb.update({ _id: existing._id }, { $set: { mapping: undefined, mappingRaw: JSON.stringify(incoming), updatedAt: new Date() } });
+      await memberMappingsDb.updateOne({ _id: existing._id }, { $set: { mapping: undefined, mappingRaw: JSON.stringify(incoming), updatedAt: new Date() } });
     } else {
-      await memberMappingsDb.insert({ userId: req.user.id, memberId, mappingRaw: JSON.stringify(incoming), createdAt: new Date(), updatedAt: new Date() });
+      await memberMappingsDb.insertOne({ _id: genId(), userId: req.user.id, memberId, mappingRaw: JSON.stringify(incoming), createdAt: new Date(), updatedAt: new Date() });
     }
     return res.json({ ok: true, warnings });
   } catch (e) {
@@ -1570,9 +1608,9 @@ app.put('/my/investment-mapping/:memberId', authMiddleware, async (req, res) => 
     if (errors.length) return res.status(400).json({ error: 'Validation failed', errors });
     const existing = await investmentMappingsDb.findOne({ userId: req.user.id, memberId });
     if (existing) {
-      await investmentMappingsDb.update({ _id: existing._id }, { $set: { mapping: undefined, mappingRaw: JSON.stringify(incoming), updatedAt: new Date() } });
+      await investmentMappingsDb.updateOne({ _id: existing._id }, { $set: { mapping: undefined, mappingRaw: JSON.stringify(incoming), updatedAt: new Date() } });
     } else {
-      await investmentMappingsDb.insert({ userId: req.user.id, memberId, mappingRaw: JSON.stringify(incoming), createdAt: new Date(), updatedAt: new Date() });
+      await investmentMappingsDb.insertOne({ _id: genId(), userId: req.user.id, memberId, mappingRaw: JSON.stringify(incoming), createdAt: new Date(), updatedAt: new Date() });
     }
     return res.json({ ok: true, warnings });
   } catch (e) {
@@ -1591,9 +1629,9 @@ app.put('/my/transfer-rules/:memberId', authMiddleware, async (req, res) => {
     if (errors.length) return res.status(400).json({ error: 'Validation failed', errors });
     const existing = await transferRulesDb.findOne({ userId: req.user.id, memberId });
     if (existing) {
-      await transferRulesDb.update({ _id: existing._id }, { $set: { rules, updatedAt: new Date() } });
+      await transferRulesDb.updateOne({ _id: existing._id }, { $set: { rules, updatedAt: new Date() } });
     } else {
-      await transferRulesDb.insert({ userId: req.user.id, memberId, rules, createdAt: new Date(), updatedAt: new Date() });
+      await transferRulesDb.insertOne({ _id: genId(), userId: req.user.id, memberId, rules, createdAt: new Date(), updatedAt: new Date() });
     }
     return res.json({ ok: true });
   } catch (e) {
@@ -1620,7 +1658,7 @@ app.put('/me', authMiddleware, async (req, res) => {
     const name = (req.body && req.body.name !== undefined) ? String(req.body.name).trim() : undefined;
     if (name === undefined) return res.status(400).json({ error: 'Name is required' });
     if (name.length > 60) return res.status(400).json({ error: 'Name too long (max 60)' });
-    await usersDb.update({ _id: req.user.id }, { $set: { name } });
+    await usersDb.updateOne({ _id: req.user.id }, { $set: { name } });
     const user = await usersDb.findOne({ _id: req.user.id });
     return res.json({ id: user._id, email: user.email, name: user.name || '' });
   } catch (e) {
@@ -1641,7 +1679,7 @@ app.post('/auth/change-password', authMiddleware, async (req, res) => {
     if (!ok) return res.status(401).json({ error: 'Current password is incorrect' });
     const salt = bcrypt.genSaltSync(10);
     const hash = bcrypt.hashSync(String(newPassword), salt);
-    await usersDb.update({ _id: req.user.id }, { $set: { passwordHash: hash } });
+    await usersDb.updateOne({ _id: req.user.id }, { $set: { passwordHash: hash } });
     return res.json({ ok: true });
   } catch (e) {
     console.error('Change password failed:', e);
@@ -1655,7 +1693,8 @@ app.get('/my/family', authMiddleware, async (req, res) => {
   try {
     let fam = await familiesDb.findOne({ userId: req.user.id });
     if (!fam) {
-      fam = await familiesDb.insert({ userId: req.user.id, members: [], primaryId: null, createdAt: new Date(), updatedAt: new Date() });
+      fam = { _id: genId(), userId: req.user.id, members: [], primaryId: null, createdAt: new Date(), updatedAt: new Date() };
+      await familiesDb.insertOne(fam);
     }
     const members = (fam.members || []).map(m => ({ id: m.id, name: m.name, isPrimary: m.id === fam.primaryId }));
     return res.json({ members, primaryId: fam.primaryId });
@@ -1671,12 +1710,15 @@ app.post('/my/family/members', authMiddleware, async (req, res) => {
     const name = (req.body && req.body.name) ? String(req.body.name).trim() : '';
     if (!name) return res.status(400).json({ error: 'Name is required' });
     let fam = await familiesDb.findOne({ userId: req.user.id });
-    if (!fam) { fam = await familiesDb.insert({ userId: req.user.id, members: [], primaryId: null, createdAt: new Date(), updatedAt: new Date() }); }
+    if (!fam) {
+      fam = { _id: genId(), userId: req.user.id, members: [], primaryId: null, createdAt: new Date(), updatedAt: new Date() };
+      await familiesDb.insertOne(fam);
+    }
     const id = genId();
     const members = Array.isArray(fam.members) ? fam.members.slice() : [];
     members.push({ id, name });
     const primaryId = fam.primaryId || id; // first member becomes primary by default
-    await familiesDb.update({ _id: fam._id }, { $set: { members, primaryId, updatedAt: new Date() } });
+    await familiesDb.updateOne({ _id: fam._id }, { $set: { members, primaryId, updatedAt: new Date() } });
     return res.json({ id, name, isPrimary: id === primaryId });
   } catch (e) {
     console.error('Add member failed:', e);
@@ -1697,7 +1739,7 @@ app.put('/my/family/members/:id', authMiddleware, async (req, res) => {
     if (idx === -1) return res.status(404).json({ error: 'Member not found' });
     if (name !== undefined) members[idx].name = name;
     const primaryId = setPrimary ? id : fam.primaryId;
-    await familiesDb.update({ _id: fam._id }, { $set: { members, primaryId, updatedAt: new Date() } });
+    await familiesDb.updateOne({ _id: fam._id }, { $set: { members, primaryId, updatedAt: new Date() } });
     return res.json({ ok: true });
   } catch (e) {
     console.error('Update member failed:', e);
@@ -1719,7 +1761,7 @@ app.delete('/my/family/members/:id', authMiddleware, async (req, res) => {
     if (primaryId === id) {
       primaryId = members.length ? members[0].id : null;
     }
-    await familiesDb.update({ _id: fam._id }, { $set: { members, primaryId, updatedAt: new Date() } });
+    await familiesDb.updateOne({ _id: fam._id }, { $set: { members, primaryId, updatedAt: new Date() } });
     return res.json({ ok: true });
   } catch (e) {
     console.error('Delete member failed:', e);
@@ -1739,7 +1781,7 @@ app.put('/my/uploads/:id/member', authMiddleware, async (req, res) => {
       const exists = fam && Array.isArray(fam.members) && fam.members.some(m => m.id === memberId);
       if (!exists) return res.status(400).json({ error: 'Invalid memberId' });
     }
-    await uploadsDb.update({ _id: doc._id }, { $set: { memberId: memberId || null } });
+    await uploadsDb.updateOne({ _id: doc._id }, { $set: { memberId: memberId || null } });
     return res.json({ ok: true });
   } catch (e) {
     console.error('Set upload member failed:', e);
@@ -1748,6 +1790,17 @@ app.put('/my/uploads/:id/member', authMiddleware, async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+
+async function startServer() {
+  try {
+    await initDb();
+    app.listen(PORT, () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
+  } catch (e) {
+    console.error('Failed to start server:', e);
+    process.exit(1);
+  }
+}
+
+startServer();

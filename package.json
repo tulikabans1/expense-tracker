@@ -16,8 +16,8 @@
     "cors": "^2.8.5",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.10.0",
     "multer": "^2.0.2",
-    "nedb-promises": "^6.2.3",
     "xlsx": "^0.18.5",
     "xlsx-js-style": "^1.2.0"
   }
